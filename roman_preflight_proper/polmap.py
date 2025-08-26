@@ -1,10 +1,10 @@
 #   Copyright 2019 California Institute of Technology
 #   Modified 23 March 2021 (JEK) - switched to linear from spline interpolation in polab
+#   Modified 18 August 2025 - Added new polaxis parameters for different output polarizations
 # ------------------------------------------------------------------
 
 import numpy as np
 from scipy.interpolate import interp1d
-import math
 import proper
 import roman_preflight_proper as rp 
 
@@ -12,10 +12,14 @@ import roman_preflight_proper as rp
 # polfile: rootname of file containing polarization coefficients
 # pupil_diam_pix: diameter of pupil in pixels
 # condition: polarization circumstance:
+#        -4: -45 deg in, -45 deg out
+#        -3: -45 deg in, +45 deg out
 #        -2: -45 deg in, Y out
 #        -1: -45 deg in, X out
 #         1: +45 deg in, X out
 #         2: +45 deg in, Y out
+#         3: +45 deg in, +45 deg out
+#         4: +45 deg in, -45 deg out
 #         5: X polarization (mean of +/-45 deg in, X out)
 #         6: Y polarization (mean of +/-45 deg in, X out)
 #        10: All polarizations (mean of +/-45 deg in, X&Y out)
@@ -26,8 +30,40 @@ def polmap( wavefront, polfile, pupil_diam_pix, condition, MUF=1.0 ):
     n = proper.prop_get_gridsize( wavefront )
     lambda_m = proper.prop_get_wavelength(wavefront)
 
-    if condition <= 2:
+    if -2 <= condition <= 2:
         (amp, pha) = polab( polfile, lambda_m, pupil_diam_pix, condition )
+    elif condition == -4:
+        (amp_m45_x, pha_m45_x) = polab( polfile, lambda_m, pupil_diam_pix, -1 )
+        (amp_m45_y, pha_m45_y) = polab( polfile, lambda_m, pupil_diam_pix, -2 )
+        e_m45_x = amp_m45_x * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_m45_x)
+        e_m45_y = amp_m45_y * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_m45_y)
+        e_m45_m45 = (e_m45_x + e_m45_y) / np.sqrt(2)
+        amp = np.abs(e_m45_m45)
+        pha = np.angle(e_m45_m45) * (lambda_m / (2 * np.pi))
+    elif condition == -3:
+        (amp_m45_x, pha_m45_x) = polab( polfile, lambda_m, pupil_diam_pix, -1 )
+        (amp_m45_y, pha_m45_y) = polab( polfile, lambda_m, pupil_diam_pix, -2 )
+        e_m45_x = amp_m45_x * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_m45_x)
+        e_m45_y = amp_m45_y * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_m45_y)
+        e_m45_p45 = (e_m45_x - e_m45_y) / np.sqrt(2)
+        amp = np.abs(e_m45_p45)
+        pha = np.angle(e_m45_p45) * (lambda_m / (2 * np.pi))
+    elif condition == 3:
+        (amp_p45_x, pha_p45_x) = polab( polfile, lambda_m, pupil_diam_pix, 1 )
+        (amp_p45_y, pha_p45_y) = polab( polfile, lambda_m, pupil_diam_pix, 2 )
+        e_p45_x = amp_p45_x * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_p45_x)
+        e_p45_y = amp_p45_y * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_p45_y)
+        e_p45_p45 = (e_p45_x + e_p45_y) / np.sqrt(2)
+        amp = np.abs(e_p45_p45)
+        pha = np.angle(e_p45_p45) * (lambda_m / (2 * np.pi))
+    elif condition == 4:
+        (amp_p45_x, pha_p45_x) = polab( polfile, lambda_m, pupil_diam_pix, 1 )
+        (amp_p45_y, pha_p45_y) = polab( polfile, lambda_m, pupil_diam_pix, 2 )
+        e_p45_x = amp_p45_x * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_p45_x)
+        e_p45_y = amp_p45_y * np.exp(1j * ((2 * np.pi) / lambda_m) * pha_p45_y)
+        e_p45_m45 = (e_p45_x - e_p45_y) / np.sqrt(2)
+        amp = np.abs(e_p45_m45)
+        pha = np.angle(e_p45_m45) * (lambda_m / (2 * np.pi))
     elif condition == 5:
         (amp_m45_x, pha_m45_x) = polab( polfile, lambda_m, pupil_diam_pix, -1 )
         (amp_p45_x, pha_p45_x) = polab( polfile, lambda_m, pupil_diam_pix, +1 )
@@ -168,4 +204,3 @@ def polab( polfile, lambda_m, pupil_diam_pix, condition ):
                 pha[j,:] = map
 
     return amp, pha
-
