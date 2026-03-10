@@ -12,7 +12,7 @@ ext_modules = []
 
 setup(
       name="roman_preflight_proper",
-      version = "2.0.1",
+      version = "2.0.2",
       packages=find_packages(),
 
       install_requires = ['numpy>=1.8', 'scipy>=0.19', 'astropy>=1.3', 'PyPROPER3>=3.3'],

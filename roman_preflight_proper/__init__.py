@@ -2,7 +2,7 @@ import os
 import os.path as _osp
 import numpy as np
 
-__version__ = '2.0.1'     # software version
+__version__ = '2.0.2'     # software version
 
 dm_version = '8.0'      # default DM data version (not software version)     
 
